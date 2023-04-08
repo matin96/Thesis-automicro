@@ -182,7 +182,6 @@ nasa
 nasa_data.csv
 nasa.csv
 nasa.py
-*.gexf
 *.pickle
 *.gephi
 *.index
@@ -193,3 +192,4 @@ model1
 mini graph
 big graph
 mini graph
+img

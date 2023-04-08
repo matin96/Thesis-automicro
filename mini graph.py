@@ -117,16 +117,16 @@ def ml_prediction(node):
     lin_model = LinearRegression()
     lasso_model = Lasso(alpha=10)
     ridge_model = Ridge(alpha=1, random_state=1)
-    # en_model = ElasticNet(alpha=0.5, l1_ratio=0.4, max_iter=10000000)
-    # tree_model = DecisionTreeRegressor()
-    # rf_model = RandomForestRegressor(n_estimators=100, random_state=0)
+    en_model = ElasticNet(alpha=0.5, l1_ratio=0.4, max_iter=10000000)
+    tree_model = DecisionTreeRegressor()
+    rf_model = RandomForestRegressor(n_estimators=100, random_state=0)
     lassocv_model = LassoCV(cv=5)
     poly_model = PolynomialFeatures(degree=2, include_bias=False)
     poly_reg_model = LinearRegression()
-    # xgboot_model = GradientBoostingRegressor(max_depth=4, learning_rate=0.1)
+    xgboot_model = GradientBoostingRegressor(max_depth=4, learning_rate=0.1)
     parameters = {'kernel': ('linear', 'rbf', 'poly'), 'C': [1.5, 10], 'gamma': [1e-7, 1e-4],
                   'epsilon': [0.1, 0.2, 0.5, 0.3]}
-    # SVR_model = SVR(C=1500000, epsilon=0.1)
+    SVR_model = SVR(C=1500000, epsilon=0.1)
     # from sklearn.model_selection import GridSearchCV
     # clf = GridSearchCV(SVR_model, parameters)
 
@@ -167,14 +167,14 @@ def ml_prediction(node):
     lin_model.fit(xtrain, ytrain)
     lasso_model.fit(xtrain, ytrain)
     ridge_model.fit(xtrain, ytrain)
-    # en_model.fit(xtrain, ytrain)
-    # tree_model.fit(xtrain, ytrain)
-    # rf_model.fit(xtrain, ytrain.ravel())
+    en_model.fit(xtrain, ytrain)
+    tree_model.fit(xtrain, ytrain)
+    rf_model.fit(xtrain, ytrain.ravel())
     lassocv_model.fit(xtrain, ytrain)
     poly_model.fit(poly_model.fit_transform(xtrain), ytrain)
     poly_reg_model.fit(poly_model.fit_transform(xtrain), ytrain)
-    # xgboot_model.fit(xtrain, ytrain)
-    # SVR_model.fit(xtrain, ytrain)
+    xgboot_model.fit(xtrain, ytrain)
+    SVR_model.fit(xtrain, ytrain)
     # clf.fit(xtrain, ytrain)
     # print("best params for SVR:", clf.best_params_)
 
@@ -185,31 +185,14 @@ def ml_prediction(node):
     lr_pred = lin_model.predict(xtest)
     lasso_pred = lasso_model.predict(xtest)
     ridge_pred = ridge_model.predict(xtest)
-    # elastic_pred = en_model.predict(xtest)
-    # tree_pred = tree_model.predict(xtest)
-    # rf_pred = rf_model.predict(xtest)
+    elastic_pred = en_model.predict(xtest)
+    tree_pred = tree_model.predict(xtest)
+    rf_pred = rf_model.predict(xtest)
     lassocv_pred = lassocv_model.predict(xtest)
-    # poly_pred = poly_reg_model.predict(xtest)
-    # xgboot_pred = xgboot_model.predict(xtest)
-    # SVR_pred = SVR_model.predict(xtest)
+    poly_pred = poly_reg_model.predict(xtest)
+    xgboot_pred = xgboot_model.predict(xtest)
+    SVR_pred = SVR_model.predict(xtest)
 
-    if node == '55':
-        # plt.subplot(11, 10, list(DAG2.nodes).index(int(node))+1)
-        plt.title(node, fontsize=8, color='green', pad=0.1)
-        plt.plot(ytest[-100:], label="actual", color='blue')
-        plt.plot(lr_pred[-100:], label="LR", color='red')
-        # plt.xticks(fontsize=5)
-        # plt.yticks(fontsize=5)
-        # plt.plot(lasso_pred[-100:], label='Lasso')
-        # plt.plot(ridge_pred[-100:], label='ridge')
-        # plt.plot(elastic_pred[-100:], label='EN')
-        # plt.plot(tree_pred[-100:], label='tree')
-        # plt.plot(rf_pred[-100:], label="RF")
-        plt.plot(knn_pred[-100:], label='knn')
-        plt.plot(poly_reg_model.predict(poly_model.fit_transform(xtest))[-100:], label='poly')
-        # plt.plot(SVR_pred, label='SVR')
-        plt.legend()
-        plt.show()
 
     knn_rmse = sqrt(mean_squared_error(ytest[-371:, ], knn_pred[-371:, ]))
     print("KNN ML MSE: ", knn_rmse, "for node: ", node)
@@ -223,20 +206,20 @@ def ml_prediction(node):
     rmse = sqrt(mean_squared_error(ytest[-371:, ], ridge_pred[-371:, ]))
     print("Ridge ML MSE: ", rmse, "for node: ", node)
 
-    # rmse = sqrt(mean_squared_error(ytest[-371:, ], tree_pred[-371:, ]))
-    # print("tree ML MSE: ", rmse, "for node: ", node)
-    #
-    # rmse = sqrt(mean_squared_error(ytest[-371:, ], elastic_pred[-371:, ]))
-    # print("EN ML MSE: ", rmse, "for node: ", node)
-    #
-    # rmse = sqrt(mean_squared_error(ytest[-371:, ], rf_pred[-371:, ]))
-    # print("RF ML MSE: ", rmse, "for node: ", node)
-    #
-    # rmse = sqrt(mean_squared_error(ytest[-371:, ], xgboot_pred[-371:, ]))
-    # print("XGboot ML MSE: ", rmse, "for node: ", node)
-    #
-    # rmse = sqrt(mean_squared_error(ytest[-371:, ], SVR_pred[-371:, ]))
-    # print("SVR ML MSE: ", rmse, "for node: ", node)
+    rmse = sqrt(mean_squared_error(ytest[-371:, ], tree_pred[-371:, ]))
+    print("tree ML MSE: ", rmse, "for node: ", node)
+
+    rmse = sqrt(mean_squared_error(ytest[-371:, ], elastic_pred[-371:, ]))
+    print("EN ML MSE: ", rmse, "for node: ", node)
+
+    rmse = sqrt(mean_squared_error(ytest[-371:, ], rf_pred[-371:, ]))
+    print("RF ML MSE: ", rmse, "for node: ", node)
+
+    rmse = sqrt(mean_squared_error(ytest[-371:, ], xgboot_pred[-371:, ]))
+    print("XGboot ML MSE: ", rmse, "for node: ", node)
+
+    rmse = sqrt(mean_squared_error(ytest[-371:, ], SVR_pred[-371:, ]))
+    print("SVR ML MSE: ", rmse, "for node: ", node)
 
     rmse = sqrt(mean_squared_error(ytest, lassocv_pred))
     print("Lasso cv ML MSE: ", rmse)
@@ -311,17 +294,7 @@ def rnn_prediction(node):
     model1 = Sequential()
     model1.add(InputLayer((9, 1)))
     model1.add(LSTM(100, batch_size=64))
-    # model1.add(Dropout(0.2))
-    # model1.add(Dropout(0.15))
-    # model1.add(Dense(100, 'relu'))
-    # model1.add(Dropout(0.1))
-    # model1.add(Dense(32, 'relu'))
-    # model1.add(Dropout(0.25))
     model1.add(Dense(1, 'relu'))
-    # model1.save('mini graph/mymodel')
-    # from keras.models import load_model
-    #
-    # model1 = load_model('mini graph/mymodel')
     model1.summary()
 
     cp = ModelCheckpoint('model1/', save_best_only=True)
@@ -338,8 +311,6 @@ def rnn_prediction(node):
     hist = model1.fit(x_train, y_train, validation_split=0.2, epochs=1200,
                       callbacks=[save_best, stopping, lr_scheduler])
 
-    # from keras.models import load_model
-    # model1 = load_model('model1/')
 
     train_predictions = model1.predict(x_train).flatten()
     train_predictions = scaler.inverse_transform(train_predictions.reshape(-1, 1))
@@ -708,7 +679,6 @@ workload_df = fs_df.copy()
 workload_df.loc[:, "API"] = API2
 workload_df.loc[:, workload_df.columns != "API"] = \
     round(workload_df.loc[:, workload_df.columns != "API"].multiply(workload_df["API"], axis="index"), 4)
-# workload_df['0'] = workload_df["API"]
 workload_df.drop("API", inplace=True, axis=1)
 
 workload_df.to_csv("mini graph/workloads.csv")
@@ -717,7 +687,6 @@ predictions = []
 plt.suptitle("function scores and predictions:")
 
 for node in range(1, 12):
-    # predictions.append(round(ml_prediction(str(node)).tolist()[0][0], 4))
     predictions.append(ml_prediction(str(node))[len(ml_prediction(str(node))) - 1])
 
 plt.tight_layout(pad=0.25)
@@ -818,7 +787,6 @@ dif_df = pd.DataFrame(columns=dm_df.columns)
 
 # normalization
 wt = workload_df.iloc[-372, :]
-# wt = predictions2.iloc[-2, :]
 wt1 = dm_df.loc['w(t+1)']
 dif_df = pd.DataFrame(columns=dm_df.columns)
 
@@ -835,7 +803,6 @@ divided3 = []
 for col in dm_df:
     if int(col) % 2 == 0:
         n = max(conts[int(col) - 1]/200, conts2[int(col) - 1]/25)
-        # print("nodeee", col, conts[list(G.nodes).index(int(col))]/200, conts2[list(G.nodes).index(int(col))]/25)
         divided2.append(dm_df.loc['U(CPU)', col] / (n*200) * 100)
         print(dm_df.loc['U(CPU)', col], n*200)
         divided3.append(dm_df.loc['U(mem)', col] / (n*25) * 100)
@@ -989,21 +956,6 @@ for i in range(0, len(cs)):
 for i in range(0, len(cs)):
     if (abs(cs[i] - statistics.mean(cs))) > 2 * statistics.stdev(cs):
         print("hi2:", i)
-
-# for i in range(4, len(cs)):
-#     if statistics.stdev(cs[0:i]) - statistics.stdev(cs[0:i - 1]) * 2 < (
-#             statistics.stdev(cs[0:i - 1]) - statistics.stdev(cs[0:i - 2])):
-#         print(i)
-#
-# for i in range(3, len(cs)):
-#     print(statistics.stdev(cs[0:i-1]) - statistics.stdev(cs[0:i]))
-
-# for i in range(10, len(cs)):
-#     if statistics.stdev(cs[0:i]) > 1.5 * (statistics.stdev(cs[0:i - 1])):
-#         print(i)
-# print("end2!")
-# for i in range(2, len(cs)):
-#     print(statistics.stdev(cs[0:i]))
 
 
 def containers(index1, bool):
@@ -1207,15 +1159,6 @@ print("MSE in real workload and calculated is:", MSE)
 
 # **********  RNN ml_prediction **********
 
-# ml36, ml36_rms = ml_prediction("36")
-# ml41, ml41_rms = ml_prediction("41")
-# ml45, ml45rms = ml_prediction("45")
-# ml77, ml77rms = ml_prediction("77")
-# ml0, ml0rms = ml_prediction("0")
-# ml17, ml17rms = ml_prediction("17")
-# ml24, ml24rms = ml_prediction("24")
-# ml37, ml37rms = ml_prediction("37")
-# ml10, ml10rms = ml_prediction("10")
 ml1, ml1rms = ml_prediction("1")
 
 # for x in workload_df:
@@ -1277,10 +1220,7 @@ conts_pred1 = []
 for col in dm_df:
     conts_pred1.append(containers(col, False))
 
-# containers_df.loc[len(containers_df)] = conts_pred1
-# dif_df = pd.read_csv("mini graph/differenced_dm.csv", index_col=0)
-# cpu_utilization_df.loc[len(cpu_utilization_df)] = dif_df.loc['ucpu(t)']
-# mem_utilization_df.loc[len(mem_utilization_df)] = dif_df.loc['umem(t)']
+
 print("conts_pred1:", conts_pred1)
 
 time_list = []
@@ -1494,11 +1434,6 @@ def decision_making(timee, n_list):
     return conts_pred
 
 
-
-# n3 = decision_making(4, conts_pred1)
-# n2 = decision_making(3, n3)
-# n1 = decision_making(2, n2)
-
 ns = []
 ns.append(decision_making(372, conts_pred1))
 for i in range(371, 1, -1):
@@ -1535,36 +1470,6 @@ plt.hist(cpu_util)
 plt.xticks(np.arange(70, 101, step=10))
 plt.title("CPU utilization histogram")
 plt.show()
-
-# containers_df = pd.read_csv("mini graph/containers.csv", index_col=0)
-# containers_df = pd.read_csv("mini graph/containers.csv", index_col=0)
-# conts45 = containers_df["45"].tolist()
-# del conts45[0]
-# plt.plot(conts45, label='proactive')
-# plt.plot(cont3_45, label='reactive')
-# plt.yticks(np.arange(min(min(conts45), min(cont3_45)), max(max(conts45), max(cont3_45))+1, step=1))
-# plt.xlabel("time")
-# plt.ylabel("resources")
-# plt.legend()
-# plt.show()
-#
-# num_react = 0
-# for i in range(len(cont3_45)-1):
-#     if cont3_45[i] != cont3_45[i+1]:
-#         num_react += 1
-#
-# num_proact = 0
-# for i in range(len(conts45)-1):
-#     if conts45[i] != conts45[i+1]:
-#         num_proact += 1
-#
-# print("number of reactive scaling:", num_react)
-# print("number of proactive scaling:", num_proact)
-#
-# plt.plot(range(300), workload_df.iloc[-300:, list(G.nodes).index(0)], label='workload', color='blue')
-# plt.plot(range(300), predictions2.iloc[-300:, list(G.nodes).index(0)], label='RNN prediction', color='red')
-# plt.legend()
-# plt.show()
 
 cpu_rem_df = []
 for row in range(len(cpu_util)):
