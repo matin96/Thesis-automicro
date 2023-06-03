@@ -77,7 +77,7 @@ def ml_prediction(node):
     knn = KNeighborsRegressor(n_neighbors=2)
     lin_model = LinearRegression()
     lasso_model = Lasso(alpha=10)
-    ridge_model = Ridge(alpha=1, random_state=1)
+    ridge_model = Ridge(alpha=10)
     en_model = ElasticNet(alpha=0.5, l1_ratio=0.4, max_iter=10000000)
     tree_model = DecisionTreeRegressor()
     rf_model = RandomForestRegressor(n_estimators=100, random_state=0)
@@ -85,8 +85,8 @@ def ml_prediction(node):
     poly_model = PolynomialFeatures(degree=2, include_bias=False)
     poly_reg_model = LinearRegression()
     xgboot_model = GradientBoostingRegressor(max_depth=4, learning_rate=0.1)
-    parameters = {'kernel': ('linear', 'rbf', 'poly'), 'C': [1.5, 10], 'gamma': [1e-7, 1e-4],
-                  'epsilon': [0.1, 0.2, 0.5, 0.3]}
+    # parameters = {'kernel': ('linear', 'rbf', 'poly'), 'C': [1.5, 10], 'gamma': [1e-7, 1e-4],
+    #               'epsilon': [0.1, 0.2, 0.5, 0.3]}
     SVR_model = SVR(C=1500000, epsilon=0.1)
     from sklearn.model_selection import GridSearchCV
     # clf = GridSearchCV(SVR_model, parameters)
@@ -150,14 +150,13 @@ def ml_prediction(node):
     tree_pred = tree_model.predict(xtest)
     rf_pred = rf_model.predict(xtest)
     lassocv_pred = lassocv_model.predict(xtest)
-    poly_pred = poly_reg_model.predict(xtest)
     xgboot_pred = xgboot_model.predict(xtest)
     SVR_pred = SVR_model.predict(xtest)
 
     knn_rmse = sqrt(mean_squared_error(ytest[-347:, ], knn_pred[-347:, ]))
     print("KNN ML MSE: ", knn_rmse, "for node: ", node)
 
-    lr_rmse = sqrt(mean_squared_error(ytest[-347:, ], ridge_pred[-347:, ]))
+    lr_rmse = sqrt(mean_squared_error(ytest[-347:, ], lr_pred[-347:, ]))
     print("LR ML MSE: ", lr_rmse, "for node: ", node)
 
     rmse = sqrt(mean_squared_error(ytest[-347:, ], lasso_pred[-347:, ]))
@@ -172,7 +171,7 @@ def ml_prediction(node):
     rmse = sqrt(mean_squared_error(ytest[-347:, ], elastic_pred[-347:, ]))
     print("EN ML MSE: ", rmse, "for node: ", node)
 
-    # rmse = sqrt(mean_squared_error(ytest[-347:, ], rf_pred[-347:, ]))
+    rmse = sqrt(mean_squared_error(ytest[-347:, ], rf_pred[-347:, ]))
     print("RF ML MSE: ", rmse, "for node: ", node)
 
     rmse = sqrt(mean_squared_error(ytest[-347:, ], xgboot_pred[-347:, ]))
@@ -840,16 +839,8 @@ workload_df.loc[:, workload_df.columns != "API"] = \
 workload_df.drop("API", inplace=True, axis=1)
 
 workload_df.to_csv("big graph/workloads.csv")
-predictions = []
 
-
-ridge_pred_df = pd.DataFrame()
-rmss = 0
-
-ridge_pred_df = pd.read_csv("big graph/ridge_pred_df.csv")
-predictions = ridge_pred_df.iloc[-1, :]
-
-workload_df = pd.read_csv("big graph/workloads.csv", index_col=0)
+# workload_df = pd.read_csv("big graph/workloads.csv", index_col=0)
 # plt.tight_layout(pad=0.1, h_pad=-0.7, w_pad=0.2)
 # plt.show()
 
@@ -865,9 +856,6 @@ for col in range(75, 100):
 plt.tight_layout(pad=0.1)
 plt.show()
 
-print("Ridge average rmse =", rmss / 100)
-
-print("predictions: ", predictions)
 
 UCPU_df = workload_df.copy()
 Umem_df = workload_df.copy()
@@ -1335,14 +1323,29 @@ plt.show()
 
 MSE = 0
 workload_mse_df = pd.DataFrame()
+workload_acc_df = pd.DataFrame()
+
 # for col in workload_df:
 for col in range(0, 100):
     ms = sqrt(mean_squared_error(workload_df_scaled.iloc[-300:, workload_df_scaled.columns.get_loc(str(col))],
                                  real_node_workload_scaled.iloc[-300:, real_node_workload_scaled.columns.get_loc(str(col))]))
     workload_mse_df.loc[0, str(col)] = ms
+
+    accs_per_col = []
+    for index in range(1, 301):
+        print("col:", col)
+        error = abs(workload_df_scaled.iloc[-index, workload_df_scaled.columns.get_loc(str(col))] -
+                    real_node_workload_scaled.iloc[-index, real_node_workload_scaled.columns.get_loc(str(col))]
+                    )/real_node_workload_scaled.iloc[-index, real_node_workload_scaled.columns.get_loc(str(col))]
+        acc = (1-error)*100
+        accs_per_col.append(acc)
+    workload_acc_df[str(col)] = accs_per_col
+
     MSE += ms
 MSE /= 100
 workload_mse_df.to_csv("big graph/real_workload_mse.csv")
+workload_acc_df.to_csv("big graph/real_workload_acc.csv")
+
 plt.plot(workload_mse_df.iloc[0, :])
 plt.title("MSE for real workload and calculated workload")
 plt.xlabel("Node")
@@ -1355,7 +1358,9 @@ print("MSE in real workload and calculated is:", MSE)
 # workload_df = scaler1.inverse_transform(workload_df)
 # real_node_workload = scaler2.inverse_transform(real_node_workload)
 
-
+workload_acc_df['mean'] = workload_acc_df.mean(axis=1)
+accuracy = workload_acc_df['mean'].mean()
+print("accuracy in workload estimation is: ", accuracy)
 # **********  RNN ml_prediction **********
 
 ml2, ml2rms = ml_prediction("2")
@@ -1967,13 +1972,14 @@ no_usage_cpu2.to_csv("big graph/no_CPU2.csv")
 
 
 plt.plot(no_usage_cpu['mean'], label='Proposed approach')
-plt.plot(no_usage_cpu2['mean'], label='Hybrid approach without choosing microservices')
+plt.plot(no_usage_cpu2['mean'], label='Hybrid approach without conscious selection of microservices')
 plt.xlabel('Time')
 plt.ylabel('Average of not used CPU percentile')
 plt.legend()
 plt.grid(axis='both', linewidth=0.4)
 plt.show()
-
+x = (no_usage_cpu['mean'].mean() - no_usage_cpu2['mean'])/no_usage_cpu2['mean'].mean()
+print("improvement of not used cpu: ", x)
 
 no_usage_mem = pd.read_csv("big graph/mem_utilization.csv", index_col=0)
 for row in range(len(no_usage_mem)):
@@ -1997,13 +2003,15 @@ no_usage_mem2.to_csv("big graph/no_mem2.csv")
 
 
 plt.plot(no_usage_mem['mean'], label='Proposed approach')
-plt.plot(no_usage_mem2['mean'], label='Hybrid approach without choosing microservices')
+plt.plot(no_usage_mem2['mean'], label='Hybrid approach without conscious selection of microservices')
 plt.xlabel('Time')
 plt.ylabel('Average of not used memory percentile')
 plt.legend()
 plt.grid(axis='both', linewidth=0.4)
 plt.show()
 
+improve = (no_usage_mem['mean'].mean() - no_usage_mem2['mean'])/no_usage_mem2['mean'].mean()
+print("improvement of not used memory: ", improve)
 
 containers_df = pd.read_csv("big graph/containers.csv", index_col=0)
 conts45 = containers_df["45"].tolist()
@@ -2044,20 +2052,23 @@ for i in range(len(containers_df3) - 1):
 
 plt.plot(scale_num1, label='Proposed approach')
 # plt.plot(scale_num2, label='hybrid')
-plt.plot(scale_num3, label='Proactive approach without choosing microservices')
+plt.plot(scale_num3, label='Proactive approach without conscious selection of microservices')
 plt.xlabel('Time')
 plt.ylabel('Number of scales')
 plt.legend()
 plt.grid(axis='both', linewidth=0.4)
 plt.show()
+print("improvement in number of scales: ", (statistics.mean(scale_num1) - statistics.mean(scale_num3))/statistics.mean(scale_num3))
 
 containers_df['sum'] = containers_df.sum(axis=1)
 containers_df2['sum'] = containers_df2.sum(axis=1)
 containers_df3['sum'] = containers_df3.sum(axis=1)
 
 plt.plot(containers_df['sum'], label="Proposed approach")
-plt.plot(containers_df2['sum'], label='Hybrid approach without choosing microservices')
+plt.plot(containers_df2['sum'], label='Hybrid approach without conscious selection of microservices')
 # plt.plot(containers_df3['sum'], label='proactive')
+print("improvement in sum of microservices: ", (containers_df['sum'].mean()-containers_df2['sum'].mean())/containers_df2['sum'].mean())
+
 
 plt.legend()
 plt.xlabel("Time")
